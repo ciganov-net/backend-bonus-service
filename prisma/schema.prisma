@@ -1,0 +1,49 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "./generated"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model PromoCode {
+  id String @id @default(nanoid())
+
+  code            String    @unique
+  amount          Int
+  type            PromoType
+  description     String?
+  activationCount Int       @default(0) @map("activation_count")
+  expiresAt       DateTime  @map("expires_at")
+  isActive        Boolean   @default(true) @map("is_active")
+
+  activations PromoActivation[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("promo_codes")
+}
+
+model PromoActivation {
+  id String @id @default(nanoid())
+
+  userId String @map("user_id")
+
+  promoCode   PromoCode @relation(fields: [promoCodeId], references: [id])
+  promoCodeId String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, promoCodeId])
+  @@map("promo_activations")
+}
+
+enum PromoType {
+  FREE_BET
+  FIXED
+  PERCENTAGE
+}
