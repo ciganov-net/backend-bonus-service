@@ -18,7 +18,7 @@ export class gRPCMetricsInterceptor implements NestInterceptor {
 		@InjectMetric('grpc_request_duration_seconds')
 		private readonly histogram: Histogram<string>
 	) {
-		this.SERVICE_NAME = 'auth'
+		this.SERVICE_NAME = 'betting'
 	}
 
 	intercept(

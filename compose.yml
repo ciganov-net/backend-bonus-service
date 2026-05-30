@@ -1,0 +1,22 @@
+version: '3.9'
+
+services:
+  bonus-service:
+    container_name: bonus-service
+    image: ciganov-net/bonus-service:dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    env_file:
+      - .env.production.local
+    expose:
+      - '9107'
+    volumes:
+      - ../logs/bonus:/var/log/services/bonus
+    networks:
+      - ciganov-net
+
+networks:
+  ciganov-net:
+    external: true
