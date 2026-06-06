@@ -1,3 +1,4 @@
+import { TransactionType } from '@ciganov/contracts/dist/gen/balance'
 import type {
 	ActivatePromoCodeRequest,
 	ActivatePromoCodeResponse,
@@ -12,13 +13,16 @@ import { RpcException } from '@nestjs/microservices'
 import { PromoType } from '@prisma/generated/enums'
 import { createHash } from 'crypto'
 import { PinoLogger } from 'nestjs-pino'
+import { lastValueFrom } from 'rxjs'
 
+import { BalanceClientGrpc } from '@/infrastructure/grpc/balance/balance.grpc'
 import { PrismaService } from '@/infrastructure/prisma/prisma.service'
 
 @Injectable()
 export class BonusesService {
 	constructor(
 		private readonly prismaService: PrismaService,
+		private readonly balanceGrpcClient: BalanceClientGrpc,
 		private readonly logger: PinoLogger
 	) {
 		this.logger.setContext(BonusesService.name)
@@ -50,12 +54,22 @@ export class BonusesService {
 				details: 'Promo code activation limit reached'
 			})
 
-		await this.prismaService.promoActivation.create({
-			data: {
-				userId,
-				promoCode: { connect: { id: promoCode.id } }
-			}
-		})
+		const { ok } = await lastValueFrom(
+			this.balanceGrpcClient.transaction({
+				amount: promoCode.amount,
+				type: TransactionType.ADD_BONUS,
+				userId: userId
+			})
+		)
+
+		if (ok) {
+			await this.prismaService.promoActivation.create({
+				data: {
+					userId,
+					promoCode: { connect: { id: promoCode.id } }
+				}
+			})
+		}
 
 		return {
 			ok: true
